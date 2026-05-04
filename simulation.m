@@ -1,35 +1,39 @@
-% SIMULATION  Simulate and verify the cart-pole Euler-Lagrange model.
+% SIMULATION  Simulate and verify the cart-double-pendulum Euler-Lagrange model.
 %
 % Verification strategy:
 %   (V1) Energy conservation. With u = 0 and no friction, total mechanical
 %        energy E = T + V must be constant along trajectories. We integrate
 %        the model and check the relative drift.
-%   (V2) Equilibria. Initial conditions at the upright (theta = 0) and
-%        hanging (theta = pi) equilibria, with zero velocity and u = 0,
-%        must produce zero acceleration. We check this from the model
-%        directly and from a short integration.
+%   (V2) Equilibria. Initial conditions at the upright-upright (th1=th2=0)
+%        and hanging-hanging (th1=th2=pi) configurations, with zero
+%        velocity and u=0, must produce zero acceleration.
 %   (V3) Linearization. Numerical Jacobians around the two equilibria are
 %        compared against the closed-form linearizations from the
 %        manipulator equations. Eigenvalues are reported and the
 %        controllability rank is checked.
-%   (V4) Animation. A visual sanity check of the swing.
+%   (V4) Animation. A real-time visual sanity check of the swing.
 
 clear; close all; clc;
 
 %% ------------------------------------------------------------------------
 %  Parameters
 %  ------------------------------------------------------------------------
-params.M = 1.0;      % cart mass            [kg]
-params.m = 0.2;      % pendulum bob mass    [kg]
-params.l = 0.5;      % pendulum rod length  [m]
-params.g = 9.81;     % gravity              [m/s^2]
-params.b_cart = 4.0;   % cart viscous friction   [N s / m]    -- vicious
-params.b_pend = 0.25;  % pendulum viscous fric.  [N m s / rad] -- vicious
+params.M  = 1.0;     % cart mass               [kg]
+params.m1 = 0.20;    % pole-1 bob mass         [kg]
+params.m2 = 0.15;    % pole-2 bob mass         [kg]
+params.l1 = 0.50;    % pole-1 rod length       [m]
+params.l2 = 0.40;    % pole-2 rod length       [m]
+params.g  = 9.81;    % gravity                 [m/s^2]
+
+params.b_cart  = 4.0;    % cart viscous friction    [N s / m]    -- vicious
+params.b_pend1 = 0.25;   % pole-1 viscous friction  [N m s / rad]
+params.b_pend2 = 0.20;   % pole-2 viscous friction  [N m s / rad]
 
 %% ------------------------------------------------------------------------
 %  (V1) Energy conservation  --  free response from a perturbed hang
 %  ------------------------------------------------------------------------
-x0_swing = [0; pi - 0.4; 0; 0];   % small push from the hanging equilibrium
+%  state = [s; th1; th2; sdot; th1dot; th2dot]
+x0_swing = [0; pi - 0.30; pi + 0.20; 0; 0; 0];
 tspan    = [0 10];
 opts     = odeset('RelTol', 1e-10, 'AbsTol', 1e-12);
 
@@ -37,13 +41,14 @@ u_zero = @(t, x) 0;
 
 % V1 must run friction-free regardless of the global params.
 params_nf = params;
-params_nf.b_cart = 0;
-params_nf.b_pend = 0;
+params_nf.b_cart  = 0;
+params_nf.b_pend1 = 0;
+params_nf.b_pend2 = 0;
 
 [t1, X1] = ode45(@(t, x) underactuated_model(t, x, u_zero, params_nf), ...
                  tspan, x0_swing, opts);
 
-E1   = arrayfun(@(k) total_energy(X1(k,:).', params), 1:size(X1,1));
+E1   = arrayfun(@(k) total_energy(X1(k,:).', params_nf), 1:size(X1,1));
 relE = (E1 - E1(1)) / max(abs(E1(1)), eps);
 
 fprintf('--- (V1) Energy conservation (u = 0, friction = 0) ---\n');
@@ -52,14 +57,18 @@ fprintf('  max |E(t) - E(0)| = % .3e J\n', max(abs(E1 - E1(1))));
 fprintf('  max relative drift= % .3e\n\n', max(abs(relE)));
 
 figure('Name', '(V1) States, free response');
-subplot(2,2,1); plot(t1, X1(:,1)); grid on;
-    xlabel('t [s]'); ylabel('s [m]');         title('cart position');
-subplot(2,2,2); plot(t1, X1(:,2)); grid on;
-    xlabel('t [s]'); ylabel('theta [rad]');   title('pendulum angle');
-subplot(2,2,3); plot(t1, X1(:,3)); grid on;
-    xlabel('t [s]'); ylabel('sdot [m/s]');    title('cart velocity');
-subplot(2,2,4); plot(t1, X1(:,4)); grid on;
-    xlabel('t [s]'); ylabel('thetadot [rad/s]'); title('pendulum rate');
+subplot(3,2,1); plot(t1, X1(:,1)); grid on;
+    xlabel('t [s]'); ylabel('s [m]');           title('cart position');
+subplot(3,2,3); plot(t1, X1(:,2)); grid on;
+    xlabel('t [s]'); ylabel('\theta_1 [rad]');  title('pole-1 angle');
+subplot(3,2,5); plot(t1, X1(:,3)); grid on;
+    xlabel('t [s]'); ylabel('\theta_2 [rad]');  title('pole-2 angle');
+subplot(3,2,2); plot(t1, X1(:,4)); grid on;
+    xlabel('t [s]'); ylabel('sdot [m/s]');           title('cart velocity');
+subplot(3,2,4); plot(t1, X1(:,5)); grid on;
+    xlabel('t [s]'); ylabel('\theta_1 dot [rad/s]'); title('pole-1 rate');
+subplot(3,2,6); plot(t1, X1(:,6)); grid on;
+    xlabel('t [s]'); ylabel('\theta_2 dot [rad/s]'); title('pole-2 rate');
 
 figure('Name', '(V1) Energy drift');
 plot(t1, E1 - E1(1), 'LineWidth', 1.2); grid on;
@@ -70,17 +79,17 @@ title(sprintf('Total energy drift  (max rel. err = %.2e)', max(abs(relE))));
 %  (V2) Equilibria
 %  ------------------------------------------------------------------------
 fprintf('--- (V2) Equilibria ---\n');
-x_up   = [0; 0;  0; 0];
-x_down = [0; pi; 0; 0];
+x_up   = [0; 0;  0;  0; 0; 0];   % both upright
+x_down = [0; pi; pi; 0; 0; 0];   % both hanging
 
 f_up   = underactuated_model(0, x_up,   0, params);
 f_down = underactuated_model(0, x_down, 0, params);
 
-fprintf('  f(x_upright,   u=0) = [% .2e % .2e % .2e % .2e]\n', f_up);
-fprintf('  f(x_hanging,   u=0) = [% .2e % .2e % .2e % .2e]\n\n', f_down);
+fprintf('  f(both-upright,  u=0) = [% .2e % .2e % .2e % .2e % .2e % .2e]\n', f_up);
+fprintf('  f(both-hanging,  u=0) = [% .2e % .2e % .2e % .2e % .2e % .2e]\n\n', f_down);
 
 %% ------------------------------------------------------------------------
-%  (V3) Linearization around upright + hanging equilibria
+%  (V3) Linearization around the two equilibria
 %  ------------------------------------------------------------------------
 fprintf('--- (V3) Linearization ---\n');
 
@@ -94,17 +103,17 @@ f_xu = @(x, u) underactuated_model(0, x, u, params);
 [A_up_cf,   B_up_cf  ] = analytic_linearization(x_up,   params);
 [A_down_cf, B_down_cf] = analytic_linearization(x_down, params);
 
-fprintf('  Upright eq.  ||A_num - A_analytic||_F = %.2e\n', ...
+fprintf('  Both-upright eq.  ||A_num - A_analytic||_F = %.2e\n', ...
         norm(A_up - A_up_cf, 'fro'));
-fprintf('  Hanging eq.  ||A_num - A_analytic||_F = %.2e\n', ...
+fprintf('  Both-hanging eq.  ||A_num - A_analytic||_F = %.2e\n', ...
         norm(A_down - A_down_cf, 'fro'));
 
-fprintf('  Upright eigenvalues:\n');     disp(eig(A_up).');
-fprintf('  Hanging eigenvalues:\n');     disp(eig(A_down).');
-fprintf('  Controllability rank (upright) = %d  (expect 4)\n', ...
-        rank(ctrb(A_up,  B_up)));
-fprintf('  Controllability rank (hanging) = %d  (expect 4)\n\n', ...
-        rank(ctrb(A_down,B_down)));
+fprintf('  Both-upright eigenvalues:\n');     disp(eig(A_up).');
+fprintf('  Both-hanging eigenvalues:\n');     disp(eig(A_down).');
+fprintf('  Controllability rank (both-upright) = %d  (expect 6)\n', ...
+        rank(ctrb(A_up,   B_up)));
+fprintf('  Controllability rank (both-hanging) = %d  (expect 6)\n\n', ...
+        rank(ctrb(A_down, B_down)));
 
 %% ------------------------------------------------------------------------
 %  (V4) Animation -- damped free response, played back in real time
@@ -118,15 +127,22 @@ animate_cartpole(t_anim, X_anim, params);
 %   Local helper functions
 % =========================================================================
 function E = total_energy(x, p)
-    s_dot     = x(3);
-    theta     = x(2);
-    theta_dot = x(4);
+    s_dot = x(4);
+    th1   = x(2);  th2   = x(3);
+    th1d  = x(5);  th2d  = x(6);
 
-    xp_dot =  s_dot + p.l*cos(theta)*theta_dot;
-    yp_dot = -p.l*sin(theta)*theta_dot;
+    % bob-1 velocity
+    x1d =  s_dot + p.l1*cos(th1)*th1d;
+    y1d =        - p.l1*sin(th1)*th1d;
 
-    T = 0.5*p.M*s_dot^2 + 0.5*p.m*(xp_dot^2 + yp_dot^2);
-    V = p.m*p.g*p.l*cos(theta);
+    % bob-2 velocity
+    x2d =  s_dot + p.l1*cos(th1)*th1d + p.l2*cos(th2)*th2d;
+    y2d =        - p.l1*sin(th1)*th1d - p.l2*sin(th2)*th2d;
+
+    T = 0.5*p.M*s_dot^2 ...
+      + 0.5*p.m1*(x1d^2 + y1d^2) ...
+      + 0.5*p.m2*(x2d^2 + y2d^2);
+    V = (p.m1 + p.m2)*p.g*p.l1*cos(th1) + p.m2*p.g*p.l2*cos(th2);
 
     E = T + V;
 end
@@ -153,45 +169,63 @@ end
 % -------------------------------------------------------------------------
 function [A, B] = analytic_linearization(x_eq, p)
 % Linearization of  qddot = M(q)^{-1} ( B u - C(q,qdot) qdot - G(q) )
-% about an equilibrium with qdot = 0. Then C qdot = 0 and dC/d(.) qdot = 0,
-% so only dG/dq matters:  dqddot/dq = -M(q*)^{-1} dG/dq |_{q*}.
-    theta = x_eq(2);
-    M = p.M; m = p.m; l = p.l; g = p.g;
+% about an equilibrium with qdot = 0. Then C qdot = 0; further, C is
+% linear in qdot, so (C qdot) is quadratic in qdot and its Jacobians
+% w.r.t. q and qdot vanish at qdot = 0. So only dG/dq matters:
+%   d(qddot)/dq = -M(q*)^{-1} dG/dq |_{q*}.
+    th1 = x_eq(2);  th2 = x_eq(3);
 
-    Mq = [ M + m,         m*l*cos(theta);
-           m*l*cos(theta) m*l^2          ];
+    M  = p.M;   m1 = p.m1;  m2 = p.m2;
+    l1 = p.l1;  l2 = p.l2;  g  = p.g;
 
-    % G(q) = [0; -m g l sin(theta)],  dG/dq = [0 0; 0 -m g l cos(theta)]
-    dGdq = [ 0, 0;
-             0, -m*g*l*cos(theta) ];
+    c1  = cos(th1);    c2  = cos(th2);
+    c12 = cos(th1 - th2);
 
-    Bq = [1; 0];
+    Mq = [ M + m1 + m2,        (m1 + m2)*l1*c1,     m2*l2*c2;
+           (m1 + m2)*l1*c1,    (m1 + m2)*l1^2,      m2*l1*l2*c12;
+           m2*l2*c2,           m2*l1*l2*c12,        m2*l2^2 ];
 
-    Minv = Mq \ eye(2);
-    A = [zeros(2), eye(2);
-         -Minv*dGdq, zeros(2)];
-    B = [zeros(2,1);
+    % G = [0; -(m1+m2) g l1 sin(th1); -m2 g l2 sin(th2)]
+    dGdq = [ 0,  0,                        0;
+             0, -(m1 + m2)*g*l1*c1,        0;
+             0,  0,                       -m2*g*l2*c2 ];
+
+    Bq = [1; 0; 0];
+
+    Minv = Mq \ eye(3);
+    A = [zeros(3),    eye(3);
+         -Minv*dGdq,  zeros(3)];
+    B = [zeros(3,1);
          Minv*Bq];
 end
 
 % -------------------------------------------------------------------------
 function animate_cartpole(t, X, p)
-    fig = figure('Name', 'Cart-pole animation');
+    fig = figure('Name', 'Cart with double pendulum');
     cart_w = 0.30;  cart_h = 0.20;
-    s_min  = min(X(:,1)) - p.l - 0.5;
-    s_max  = max(X(:,1)) + p.l + 0.5;
+
+    L_total = p.l1 + p.l2;
+    s_min   = min(X(:,1)) - L_total - 0.3;
+    s_max   = max(X(:,1)) + L_total + 0.3;
 
     hold on; axis equal; grid on;
     xlim([s_min, s_max]);
-    ylim([-p.l-0.4, p.l+0.4]);
+    ylim([-L_total - 0.3, L_total + 0.3]);
     xlabel('x [m]'); ylabel('y [m]');
 
     plot([s_min s_max], [-cart_h/2 -cart_h/2], 'k-', 'LineWidth', 1);  % rail
     cart = rectangle('Position', [-cart_w/2 -cart_h/2 cart_w cart_h], ...
                      'Curvature', 0.1, 'FaceColor', [0.85 0.85 0.85]);
-    rod  = line([0 0], [0 p.l], 'LineWidth', 2, 'Color', [0 0.3 0.8]);
-    bob  = plot(0, p.l, 'o', 'MarkerSize', 10, ...
-                'MarkerFaceColor', [0.85 0.1 0.1], ...
+
+    rod1 = line([0 0], [0 p.l1], 'LineWidth', 2, 'Color', [0.00 0.30 0.80]);
+    bob1 = plot(0, p.l1, 'o', 'MarkerSize', 9, ...
+                'MarkerFaceColor', [0.95 0.65 0.10], ...
+                'MarkerEdgeColor', 'k');
+
+    rod2 = line([0 0], [p.l1 p.l1 + p.l2], 'LineWidth', 2, ...
+                'Color', [0.55 0.10 0.55]);
+    bob2 = plot(0, p.l1 + p.l2, 'o', 'MarkerSize', 10, ...
+                'MarkerFaceColor', [0.85 0.10 0.10], ...
                 'MarkerEdgeColor', 'k');
 
     fps    = 60;
@@ -202,14 +236,21 @@ function animate_cartpole(t, X, p)
     t_wall = tic;
     for k = 1:numel(t_play)
         if ~ishghandle(fig); return; end
-        s  = X_play(k, 1);
-        th = X_play(k, 2);
+        s   = X_play(k, 1);
+        th1 = X_play(k, 2);
+        th2 = X_play(k, 3);
 
         cart.Position = [s - cart_w/2, -cart_h/2, cart_w, cart_h];
-        bx = s + p.l*sin(th);
-        by =     p.l*cos(th);
-        set(rod, 'XData', [s, bx], 'YData', [0, by]);
-        set(bob, 'XData', bx,      'YData', by);
+
+        b1x = s   + p.l1*sin(th1);
+        b1y =       p.l1*cos(th1);
+        b2x = b1x + p.l2*sin(th2);
+        b2y = b1y + p.l2*cos(th2);
+
+        set(rod1, 'XData', [s,   b1x], 'YData', [0,   b1y]);
+        set(bob1, 'XData', b1x,        'YData', b1y);
+        set(rod2, 'XData', [b1x, b2x], 'YData', [b1y, b2y]);
+        set(bob2, 'XData', b2x,        'YData', b2y);
 
         set(ttl, 'String', sprintf('t = %5.2f s', t_play(k)));
 
