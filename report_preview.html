@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modeling and Control of an Underactuated Cart Double-Pendulum</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f2f2f2;
+      color: #111;
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 880px;
+      margin: 28px auto;
+      background: white;
+      padding: 56px 64px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+    }
+    h1, h2, h3 { color: #111; line-height: 1.2; }
+    h1 { text-align: center; margin-bottom: 0.2rem; font-size: 1.9rem; }
+    h2 { border-top: 1px solid #bbb; padding-top: 1.2rem; margin-top: 3rem; }
+    .author { text-align: center; color: #444; margin: 0.25rem 0 1.4rem; }
+    .abstract {
+      border-top: 1px solid #bbb;
+      border-bottom: 1px solid #bbb;
+      padding: 1rem 0;
+      margin: 1.5rem 0;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.35rem; font-size: 0.94rem; }
+    th, td { border-bottom: 1px solid #aaa; padding: 0.55rem 0.65rem; vertical-align: top; }
+    th { text-align: left; border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; }
+    tr:last-child td { border-bottom: 1.5px solid #111; }
+    .equation { text-align: center; font-weight: 600; margin: 1rem 0; font-family: "Times New Roman", serif; }
+    .figure { text-align: center; margin: 1.4rem 0; }
+    .caption { color: #333; font-size: 0.92rem; font-style: italic; }
+    code { font-family: Consolas, monospace; font-size: 0.9em; }
+    svg { max-width: 100%; height: auto; }
+    .page-note { color: #555; font-size: 0.92rem; text-align: center; margin-top: 1rem; }
+    @media print {
+      body { background: white; }
+      main { box-shadow: none; margin: 0; max-width: none; }
+      h2 { break-before: page; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Modeling and Control of an Underactuated Cart Double-Pendulum in MATLAB</h1>
+  <p class="author">Your Name<br>4 May 2026</p>
+
+  <section class="abstract">
+    <strong>Abstract.</strong>
+    This paper presents a MATLAB implementation of an underactuated cart with a serial double pendulum.
+    The model is derived in Euler-Lagrange form and verified through energy conservation, equilibrium checks,
+    numerical and analytic linearization, and controllability analysis. Two controllers are discussed: a local
+    LQR stabilizer and an energy-shaping swing-up controller that hands off to LQR near upright.
+    <br><br>
+    <strong>Keywords:</strong> underactuated robotics, Euler-Lagrange modeling, cart-pendulum, LQR, energy shaping, MATLAB simulation.
+  </section>
+
+  <p class="page-note">The LaTeX file forces each main section to start on a new page.</p>
+
+  <h2>1 Introduction</h2>
+  <p>Underactuated mechanical systems have fewer independent actuators than degrees of freedom. They appear in robotics, aerospace systems, legged locomotion, pendulum benchmarks, and flexible structures. Their behavior is challenging because not every coordinate can be directly commanded; the controller must exploit natural coupling between actuated and unactuated coordinates.</p>
+  <p>The MATLAB project studies a cart with a serial double pendulum. The cart can move horizontally and is actuated by a single force. The pendulum links are passive, so the controller influences their motion indirectly through cart acceleration. The project develops a nonlinear model, verifies physical consistency, and compares a local LQR balance controller with a nonlinear energy-shaping swing-up controller.</p>
+
+  <h2>2 System Model</h2>
+  <p>The generalized coordinates are q = [s, theta1, theta2]^T. The angles are measured from the upward vertical, so theta = 0 is upright and theta = pi is hanging. The state vector is x = [s, theta1, theta2, sdot, theta1dot, theta2dot]^T.</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 900 430" role="img" aria-label="Cart double pendulum diagram">
+      <line x1="80" y1="340" x2="820" y2="340" stroke="#555" stroke-width="4"/>
+      <g stroke="#999" stroke-width="2">
+        <line x1="100" y1="360" x2="130" y2="340"/><line x1="155" y1="360" x2="185" y2="340"/><line x1="210" y1="360" x2="240" y2="340"/>
+        <line x1="265" y1="360" x2="295" y2="340"/><line x1="320" y1="360" x2="350" y2="340"/><line x1="375" y1="360" x2="405" y2="340"/>
+        <line x1="430" y1="360" x2="460" y2="340"/><line x1="485" y1="360" x2="515" y2="340"/><line x1="540" y1="360" x2="570" y2="340"/>
+        <line x1="595" y1="360" x2="625" y2="340"/><line x1="650" y1="360" x2="680" y2="340"/><line x1="705" y1="360" x2="735" y2="340"/>
+      </g>
+      <rect x="385" y="260" width="130" height="60" rx="6" fill="#eee" stroke="#111" stroke-width="3"/>
+      <circle cx="420" cy="330" r="13" fill="#777" stroke="#111"/><circle cx="480" cy="330" r="13" fill="#777" stroke="#111"/>
+      <text x="450" y="298" text-anchor="middle" font-size="22">M</text>
+      <line x1="450" y1="260" x2="560" y2="130" stroke="#111" stroke-width="6"/>
+      <line x1="560" y1="130" x2="500" y2="35" stroke="#111" stroke-width="6"/>
+      <circle cx="560" cy="130" r="24" fill="#ddd" stroke="#111" stroke-width="2"/><circle cx="500" cy="35" r="26" fill="#ddd" stroke="#111" stroke-width="2"/>
+      <text x="596" y="136" font-size="20">m1</text><text x="536" y="42" font-size="20">m2</text>
+      <line x1="245" y1="292" x2="370" y2="292" stroke="#111" stroke-width="4" marker-end="url(#arrow)"/>
+      <text x="305" y="278" font-size="24">u</text>
+      <line x1="130" y1="395" x2="275" y2="395" stroke="#111" stroke-width="4" marker-end="url(#arrow)"/>
+      <text x="195" y="420" font-size="22">s</text>
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"/></marker></defs>
+    </svg>
+    <div class="caption">Figure 1. Cart with serial double pendulum.</div>
+  </div>
+
+  <p>The model in <code>underactuated_model.m</code> is written as M(q)qddot + C(q,qdot)qdot + G(q) = Bu. The input matrix B = [1, 0, 0]^T applies force only to the cart coordinate, so the angular coordinates are passive.</p>
+
+  <h2>3 Controller Design</h2>
+  <p>The first controller is a local LQR stabilizer. It linearizes the nonlinear model around the upright equilibrium, solves the continuous-time Riccati equation, and applies u = -Kx. This controller is efficient and systematic, but its validity is local.</p>
+  <p>The second controller is an energy-shaping swing-up controller. It compares the current total energy E with the upright energy Edes, applies a saturated cart force to pump energy, and switches to LQR when both angles and angular velocities are close enough to upright.</p>
+
+  <h2>4 Simulation Results</h2>
+  <p>The project uses <code>ode45</code> for numerical integration. <code>simulation.m</code> verifies model behavior through energy conservation, equilibrium checks, linearization, and controllability. <code>controller1_sim.m</code> tests LQR balance from a small upright perturbation. <code>controller2_sim.m</code> tests swing-up from near hanging and plots total mechanical energy against the desired upright energy.</p>
+
+  <table>
+    <tr><th>Script</th><th>Purpose</th><th>Main outputs</th></tr>
+    <tr><td><code>simulation.m</code></td><td>Model verification.</td><td>State plots, energy drift, eigenvalues, controllability rank, animation.</td></tr>
+    <tr><td><code>controller1_sim.m</code></td><td>Local LQR balance.</td><td>States, velocities, control force, final angle errors.</td></tr>
+    <tr><td><code>controller2_sim.m</code></td><td>Swing-up plus LQR capture.</td><td>States, control force, total energy, desired energy.</td></tr>
+  </table>
+
+  <h2>5 Conclusions</h2>
+  <p>The project demonstrates a complete workflow for an underactuated robotics problem: derive a nonlinear model, verify its physical consistency, analyze local linear behavior, and design controllers for different operating regions. The LQR controller is appropriate for local balance, while the energy-shaping controller handles large-angle swing-up before switching to LQR.</p>
+
+  <h2>References</h2>
+  <p>[1] R. Xu and U. Ozguner, "Sliding mode control of a class of underactuated systems," <em>Automatica</em>, vol. 44, no. 1, pp. 233-241, 2008.</p>
+</main>
+</body>
+</html>
