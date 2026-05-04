@@ -3,119 +3,193 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Modeling and Control of an Underactuated Cart Double-Pendulum</title>
+  <title>Underactuated Robotics Report Preview</title>
   <style>
     body {
       margin: 0;
-      background: #f2f2f2;
+      background: #efefef;
       color: #111;
       font-family: Georgia, "Times New Roman", serif;
-      line-height: 1.55;
+      line-height: 1.48;
     }
-    main {
-      max-width: 880px;
-      margin: 28px auto;
+    .page {
+      position: relative;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 18px auto;
+      box-sizing: border-box;
+      padding: 24mm;
       background: white;
-      padding: 56px 64px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 24px rgba(0,0,0,.14);
+      overflow: hidden;
     }
-    h1, h2, h3 { color: #111; line-height: 1.2; }
-    h1 { text-align: center; margin-bottom: 0.2rem; font-size: 1.9rem; }
-    h2 { border-top: 1px solid #bbb; padding-top: 1.2rem; margin-top: 3rem; }
-    .author { text-align: center; color: #444; margin: 0.25rem 0 1.4rem; }
-    .abstract {
-      border-top: 1px solid #bbb;
-      border-bottom: 1px solid #bbb;
-      padding: 1rem 0;
-      margin: 1.5rem 0;
+    .cover-logo {
+      position: absolute;
+      top: 22mm;
+      right: 22mm;
+      width: 48mm;
     }
-    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.35rem; font-size: 0.94rem; }
-    th, td { border-bottom: 1px solid #aaa; padding: 0.55rem 0.65rem; vertical-align: top; }
-    th { text-align: left; border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; }
+    .cover-title {
+      position: absolute;
+      top: 40%;
+      left: 24mm;
+      right: 24mm;
+      transform: translateY(-50%);
+      text-align: center;
+    }
+    .cover-title h1 {
+      font-size: 31px;
+      line-height: 1.15;
+      margin: 16px 0;
+    }
+    .cover-title .kicker {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .cover-bottom {
+      position: absolute;
+      bottom: 25mm;
+      left: 24mm;
+      font-size: 15px;
+    }
+    h2 {
+      font-size: 22px;
+      margin: 0 0 12px;
+      border-bottom: 1px solid #999;
+      padding-bottom: 5px;
+    }
+    h3 {
+      font-size: 16px;
+      margin: 14px 0 6px;
+    }
+    p { margin: 0 0 9px; text-indent: 18px; }
+    .noindent { text-indent: 0; }
+    .equation {
+      margin: 8px 0;
+      text-align: center;
+      font-family: "Times New Roman", serif;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid #aaa;
+      padding: 5px 6px;
+      vertical-align: top;
+    }
+    th {
+      border-top: 1.5px solid #111;
+      border-bottom: 1.5px solid #111;
+      text-align: left;
+    }
     tr:last-child td { border-bottom: 1.5px solid #111; }
-    .equation { text-align: center; font-weight: 600; margin: 1rem 0; font-family: "Times New Roman", serif; }
-    .figure { text-align: center; margin: 1.4rem 0; }
-    .caption { color: #333; font-size: 0.92rem; font-style: italic; }
-    code { font-family: Consolas, monospace; font-size: 0.9em; }
-    svg { max-width: 100%; height: auto; }
-    .page-note { color: #555; font-size: 0.92rem; text-align: center; margin-top: 1rem; }
+    .diagram { text-align: center; margin: 10px 0 6px; }
+    .caption { font-size: 12px; text-align: center; font-style: italic; color: #333; }
+    code { font-family: Consolas, monospace; font-size: .92em; }
     @media print {
       body { background: white; }
-      main { box-shadow: none; margin: 0; max-width: none; }
-      h2 { break-before: page; }
+      .page { box-shadow: none; margin: 0; page-break-after: always; }
     }
   </style>
 </head>
 <body>
-<main>
-  <h1>Modeling and Control of an Underactuated Cart Double-Pendulum in MATLAB</h1>
-  <p class="author">Your Name<br>4 May 2026</p>
-
-  <section class="abstract">
-    <strong>Abstract.</strong>
-    This paper presents a MATLAB implementation of an underactuated cart with a serial double pendulum.
-    The model is derived in Euler-Lagrange form and verified through energy conservation, equilibrium checks,
-    numerical and analytic linearization, and controllability analysis. Two controllers are discussed: a local
-    LQR stabilizer and an energy-shaping swing-up controller that hands off to LQR near upright.
-    <br><br>
-    <strong>Keywords:</strong> underactuated robotics, Euler-Lagrange modeling, cart-pendulum, LQR, energy shaping, MATLAB simulation.
+  <section class="page">
+    <img class="cover-logo" src="assets/sdu_logo.png" alt="SDU logo">
+    <div class="cover-title">
+      <div class="kicker">Underactuated Robotics</div>
+      <h1>Modeling and Control of a Cart with a Serial Double Pendulum</h1>
+      <div>MATLAB Project Report</div>
+    </div>
+    <div class="cover-bottom">
+      <strong>Assignment hand-in date:</strong> 15. June 2026<br>
+      <strong>Name:</strong> Phillip Christopher Nøhr Færch<br>
+      <strong>Email:</strong> Phfae23@student.sdu.dk
+    </div>
   </section>
 
-  <p class="page-note">The LaTeX file forces each main section to start on a new page.</p>
+  <section class="page">
+    <h2>1 Introduction and Problem Statement</h2>
+    <p>Underactuated mechanical systems have fewer independent control inputs than generalized coordinates. This means that some coordinates cannot be commanded directly, even though their motion is still affected by the controlled coordinates through inertial and gravitational coupling.</p>
+    <p>The MATLAB project studies a cart with a serial double pendulum. The cart moves horizontally and is actuated by a single force u. Two pendulum links are attached in series, and both angular coordinates are passive. The system has three degrees of freedom and one actuator.</p>
+    <div class="equation">q = [s, θ1, θ2]<sup>T</sup>, &nbsp; x = [q<sup>T</sup>, qdot<sup>T</sup>]<sup>T</sup></div>
+    <p>The control problem is difficult because the upright equilibrium is unstable and cannot be reached by directly actuating the pendulum angles. The cart force must instead create accelerations that transfer energy into the pendulum links.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 900 360" width="92%" role="img" aria-label="Cart double pendulum">
+        <line x1="90" y1="285" x2="810" y2="285" stroke="#555" stroke-width="4"/>
+        <rect x="385" y="210" width="130" height="60" rx="6" fill="#eee" stroke="#111" stroke-width="3"/>
+        <circle cx="420" cy="280" r="13" fill="#777" stroke="#111"/><circle cx="480" cy="280" r="13" fill="#777" stroke="#111"/>
+        <text x="450" y="248" text-anchor="middle" font-size="22">M</text>
+        <line x1="450" y1="210" x2="560" y2="90" stroke="#111" stroke-width="6"/>
+        <line x1="560" y1="90" x2="500" y2="25" stroke="#111" stroke-width="6"/>
+        <circle cx="560" cy="90" r="22" fill="#ddd" stroke="#111"/><circle cx="500" cy="25" r="24" fill="#ddd" stroke="#111"/>
+        <text x="590" y="95" font-size="18">m1</text><text x="530" y="32" font-size="18">m2</text>
+        <text x="300" y="230" font-size="22">u →</text><text x="180" y="330" font-size="20">s →</text>
+      </svg>
+      <div class="caption">Figure 1. The cart-double-pendulum system.</div>
+    </div>
+  </section>
 
-  <h2>1 Introduction</h2>
-  <p>Underactuated mechanical systems have fewer independent actuators than degrees of freedom. They appear in robotics, aerospace systems, legged locomotion, pendulum benchmarks, and flexible structures. Their behavior is challenging because not every coordinate can be directly commanded; the controller must exploit natural coupling between actuated and unactuated coordinates.</p>
-  <p>The MATLAB project studies a cart with a serial double pendulum. The cart can move horizontally and is actuated by a single force. The pendulum links are passive, so the controller influences their motion indirectly through cart acceleration. The project develops a nonlinear model, verifies physical consistency, and compares a local LQR balance controller with a nonlinear energy-shaping swing-up controller.</p>
+  <section class="page">
+    <h2>2 System Kinematics and Energies</h2>
+    <p>The model assumes a point-mass pendulum structure with massless rods. With angles measured from the upward vertical, the bob positions are derived directly from the link geometry.</p>
+    <div class="equation">r1 = [s + l1 sin θ1, &nbsp; l1 cos θ1]<sup>T</sup></div>
+    <div class="equation">r2 = [s + l1 sin θ1 + l2 sin θ2, &nbsp; l1 cos θ1 + l2 cos θ2]<sup>T</sup></div>
+    <p>Differentiation gives the velocity expressions used to construct the kinetic energy. The kinetic energy is a quadratic form in qdot, while the potential energy comes from the vertical positions of the masses.</p>
+    <div class="equation">T = 1/2 M sdot² + 1/2 m1(v1·v1) + 1/2 m2(v2·v2)</div>
+    <div class="equation">V = (m1 + m2) g l1 cos θ1 + m2 g l2 cos θ2</div>
+    <p>The upright configuration has maximum potential energy in this coordinate convention, so swing-up can be described by driving the total energy E = T + V toward the upright reference energy.</p>
+    <div class="equation">Edes = (m1 + m2) g l1 + m2 g l2</div>
+  </section>
 
-  <h2>2 System Model</h2>
-  <p>The generalized coordinates are q = [s, theta1, theta2]^T. The angles are measured from the upward vertical, so theta = 0 is upright and theta = pi is hanging. The state vector is x = [s, theta1, theta2, sdot, theta1dot, theta2dot]^T.</p>
+  <section class="page">
+    <h2>3 Euler-Lagrange Derivation</h2>
+    <p>The Lagrangian is L(q,qdot) = T(q,qdot) − V(q). For each generalized coordinate, the Euler-Lagrange equation relates the rate of generalized momentum to the generalized force.</p>
+    <div class="equation">d/dt(∂L/∂qdotᵢ) − ∂L/∂qᵢ = Qᵢ</div>
+    <p>Only the cart is actuated, so Q = Bu with B = [1, 0, 0]<sup>T</sup>. Carrying out the derivatives gives the manipulator equation used by the MATLAB model.</p>
+    <div class="equation">M(q)qddot + C(q,qdot)qdot + G(q) = Bu</div>
+    <p>The mass matrix is obtained from the second partial derivatives of kinetic energy with respect to generalized velocities. The gravity vector is obtained from the derivative of the potential energy. The implemented state derivative solves for qddot at each ODE call.</p>
+    <div class="equation">qddot = M(q)<sup>−1</sup>(Bu − C(q,qdot)qdot − G(q) − Ffric)</div>
+    <div class="equation">Ffric = [bcart sdot, bpend1 θ1dot, bpend2 θ2dot]<sup>T</sup></div>
+  </section>
 
-  <div class="figure">
-    <svg viewBox="0 0 900 430" role="img" aria-label="Cart double pendulum diagram">
-      <line x1="80" y1="340" x2="820" y2="340" stroke="#555" stroke-width="4"/>
-      <g stroke="#999" stroke-width="2">
-        <line x1="100" y1="360" x2="130" y2="340"/><line x1="155" y1="360" x2="185" y2="340"/><line x1="210" y1="360" x2="240" y2="340"/>
-        <line x1="265" y1="360" x2="295" y2="340"/><line x1="320" y1="360" x2="350" y2="340"/><line x1="375" y1="360" x2="405" y2="340"/>
-        <line x1="430" y1="360" x2="460" y2="340"/><line x1="485" y1="360" x2="515" y2="340"/><line x1="540" y1="360" x2="570" y2="340"/>
-        <line x1="595" y1="360" x2="625" y2="340"/><line x1="650" y1="360" x2="680" y2="340"/><line x1="705" y1="360" x2="735" y2="340"/>
-      </g>
-      <rect x="385" y="260" width="130" height="60" rx="6" fill="#eee" stroke="#111" stroke-width="3"/>
-      <circle cx="420" cy="330" r="13" fill="#777" stroke="#111"/><circle cx="480" cy="330" r="13" fill="#777" stroke="#111"/>
-      <text x="450" y="298" text-anchor="middle" font-size="22">M</text>
-      <line x1="450" y1="260" x2="560" y2="130" stroke="#111" stroke-width="6"/>
-      <line x1="560" y1="130" x2="500" y2="35" stroke="#111" stroke-width="6"/>
-      <circle cx="560" cy="130" r="24" fill="#ddd" stroke="#111" stroke-width="2"/><circle cx="500" cy="35" r="26" fill="#ddd" stroke="#111" stroke-width="2"/>
-      <text x="596" y="136" font-size="20">m1</text><text x="536" y="42" font-size="20">m2</text>
-      <line x1="245" y1="292" x2="370" y2="292" stroke="#111" stroke-width="4" marker-end="url(#arrow)"/>
-      <text x="305" y="278" font-size="24">u</text>
-      <line x1="130" y1="395" x2="275" y2="395" stroke="#111" stroke-width="4" marker-end="url(#arrow)"/>
-      <text x="195" y="420" font-size="22">s</text>
-      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"/></marker></defs>
-    </svg>
-    <div class="caption">Figure 1. Cart with serial double pendulum.</div>
-  </div>
+  <section class="page">
+    <h2>4 Model Analysis and Verification</h2>
+    <p>The script <code>simulation.m</code> verifies the model before the controllers are evaluated. The first test is energy conservation. In the absence of input and friction, the total mechanical energy should remain constant.</p>
+    <div class="equation">Edot = d/dt(T + V) = qdot<sup>T</sup>(Bu − Ffric)</div>
+    <p>When u = 0 and friction is removed, Edot = 0. The script also evaluates the upright and hanging equilibria and expects the nonlinear derivative to be close to zero.</p>
+    <div class="equation">xup = [0,0,0,0,0,0]<sup>T</sup>, &nbsp; xdown = [0,π,π,0,0,0]<sup>T</sup></div>
+    <p>Finally, the model is linearized around equilibria. The numerical Jacobian is compared with the analytic linearization from the manipulator form, and controllability is checked from the six-state controllability matrix.</p>
+    <div class="equation">δxdot = Aδx + Bℓδu</div>
+    <div class="equation">C = [Bℓ, ABℓ, A²Bℓ, ..., A⁵Bℓ], &nbsp; rank(C) = 6</div>
+  </section>
 
-  <p>The model in <code>underactuated_model.m</code> is written as M(q)qddot + C(q,qdot)qdot + G(q) = Bu. The input matrix B = [1, 0, 0]^T applies force only to the cart coordinate, so the angular coordinates are passive.</p>
+  <section class="page">
+    <h2>5 Controller Design</h2>
+    <p><code>control1.m</code> implements a local LQR stabilizer around upright. The nonlinear model is linearized at x* = 0, u* = 0, and the controller minimizes a quadratic cost.</p>
+    <div class="equation">J = ∫(x<sup>T</sup>Qx + u<sup>T</sup>Ru) dt, &nbsp; uLQR = −Kx</div>
+    <p><code>control2.m</code> implements energy-shaping swing-up with cart regulation, angle shaping, damping, saturation, and a hand-off to LQR near upright.</p>
+    <div class="equation">uE = kE(E − Edes) sign(θ1dot cos θ1 + θ2dot cos θ2)</div>
+    <div class="equation">u = uE − ks s − kv sdot − kθ(sin θ1 + α sin θ2) − kd(θ1dot + θ2dot)</div>
+    <p><code>control3.m</code> implements a sliding-mode controller on the collocated cart coordinate. It regulates the cart directly and affects the pendulums indirectly through dynamic coupling.</p>
+    <div class="equation">σ = (sdot − sdotdes) + λ(s − sdes), &nbsp; uSMC = −(Kp s + Kd sdot) − k sat(σ/φ)</div>
+  </section>
 
-  <h2>3 Controller Design</h2>
-  <p>The first controller is a local LQR stabilizer. It linearizes the nonlinear model around the upright equilibrium, solves the continuous-time Riccati equation, and applies u = -Kx. This controller is efficient and systematic, but its validity is local.</p>
-  <p>The second controller is an energy-shaping swing-up controller. It compares the current total energy E with the upright energy Edes, applies a saturated cart force to pump energy, and switches to LQR when both angles and angular velocities are close enough to upright.</p>
-
-  <h2>4 Simulation Results</h2>
-  <p>The project uses <code>ode45</code> for numerical integration. <code>simulation.m</code> verifies model behavior through energy conservation, equilibrium checks, linearization, and controllability. <code>controller1_sim.m</code> tests LQR balance from a small upright perturbation. <code>controller2_sim.m</code> tests swing-up from near hanging and plots total mechanical energy against the desired upright energy.</p>
-
-  <table>
-    <tr><th>Script</th><th>Purpose</th><th>Main outputs</th></tr>
-    <tr><td><code>simulation.m</code></td><td>Model verification.</td><td>State plots, energy drift, eigenvalues, controllability rank, animation.</td></tr>
-    <tr><td><code>controller1_sim.m</code></td><td>Local LQR balance.</td><td>States, velocities, control force, final angle errors.</td></tr>
-    <tr><td><code>controller2_sim.m</code></td><td>Swing-up plus LQR capture.</td><td>States, control force, total energy, desired energy.</td></tr>
-  </table>
-
-  <h2>5 Conclusions</h2>
-  <p>The project demonstrates a complete workflow for an underactuated robotics problem: derive a nonlinear model, verify its physical consistency, analyze local linear behavior, and design controllers for different operating regions. The LQR controller is appropriate for local balance, while the energy-shaping controller handles large-angle swing-up before switching to LQR.</p>
-
-  <h2>References</h2>
-  <p>[1] R. Xu and U. Ozguner, "Sliding mode control of a class of underactuated systems," <em>Automatica</em>, vol. 44, no. 1, pp. 233-241, 2008.</p>
-</main>
+  <section class="page">
+    <h2>6 Simulation Results and Conclusion</h2>
+    <p>The MATLAB scripts use <code>ode45</code> with tight tolerances to integrate the nonlinear model. The verification script checks energy drift, equilibria, linearization, controllability, and animation. The controller scripts compare LQR balancing, energy-shaping swing-up, and sliding-mode cart regulation.</p>
+    <table>
+      <tr><th>Script</th><th>Purpose</th><th>Expected outputs</th></tr>
+      <tr><td><code>simulation.m</code></td><td>Model verification.</td><td>Energy drift, eigenvalues, controllability rank, animation.</td></tr>
+      <tr><td><code>controller1_sim.m</code></td><td>Local LQR balance.</td><td>Angle decay, bounded input, small final error.</td></tr>
+      <tr><td><code>controller2_sim.m</code></td><td>Swing-up and LQR hand-off.</td><td>Energy approaches Edes, then angles settle near zero.</td></tr>
+      <tr><td><code>control3_sim.m</code></td><td>Sliding-mode cart regulation.</td><td>Cart moves toward s = 0; pendulum motion is indirect.</td></tr>
+    </table>
+    <p>The project demonstrates the central challenge of underactuated control: passive coordinates must be controlled through dynamic coupling. A stronger final study would include exported MATLAB figures, robustness tests, and a formal hybrid-stability discussion.</p>
+    <p class="noindent"><strong>Reference.</strong> R. Xu and U. Ozguner, "Sliding mode control of a class of underactuated systems," <em>Automatica</em>, vol. 44, no. 1, pp. 233-241, 2008.</p>
+  </section>
 </body>
 </html>
