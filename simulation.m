@@ -23,8 +23,8 @@ params.M = 1.0;      % cart mass            [kg]
 params.m = 0.2;      % pendulum bob mass    [kg]
 params.l = 0.5;      % pendulum rod length  [m]
 params.g = 9.81;     % gravity              [m/s^2]
-params.b_cart = 0;   % cart viscous friction  (set 0 for energy test)
-params.b_pend = 0;   % pendulum viscous fric. (set 0 for energy test)
+params.b_cart = 4.0;   % cart viscous friction   [N s / m]    -- vicious
+params.b_pend = 0.25;  % pendulum viscous fric.  [N m s / rad] -- vicious
 
 %% ------------------------------------------------------------------------
 %  (V1) Energy conservation  --  free response from a perturbed hang
@@ -34,7 +34,13 @@ tspan    = [0 10];
 opts     = odeset('RelTol', 1e-10, 'AbsTol', 1e-12);
 
 u_zero = @(t, x) 0;
-[t1, X1] = ode45(@(t, x) underactuated_model(t, x, u_zero, params), ...
+
+% V1 must run friction-free regardless of the global params.
+params_nf = params;
+params_nf.b_cart = 0;
+params_nf.b_pend = 0;
+
+[t1, X1] = ode45(@(t, x) underactuated_model(t, x, u_zero, params_nf), ...
                  tspan, x0_swing, opts);
 
 E1   = arrayfun(@(k) total_energy(X1(k,:).', params), 1:size(X1,1));
@@ -101,9 +107,11 @@ fprintf('  Controllability rank (hanging) = %d  (expect 4)\n\n', ...
         rank(ctrb(A_down,B_down)));
 
 %% ------------------------------------------------------------------------
-%  (V4) Animation of the free-response simulation
+%  (V4) Animation -- damped free response, played back in real time
 %  ------------------------------------------------------------------------
-animate_cartpole(t1, X1, params);
+[t_anim, X_anim] = ode45(@(t, x) underactuated_model(t, x, u_zero, params), ...
+                         tspan, x0_swing, opts);
+animate_cartpole(t_anim, X_anim, params);
 
 
 % =========================================================================
@@ -186,11 +194,12 @@ function animate_cartpole(t, X, p)
                 'MarkerFaceColor', [0.85 0.1 0.1], ...
                 'MarkerEdgeColor', 'k');
 
-    fps    = 30;
+    fps    = 60;
     t_play = t(1):1/fps:t(end);
     X_play = interp1(t, X, t_play);
 
-    ttl = title('');
+    ttl    = title('');
+    t_wall = tic;
     for k = 1:numel(t_play)
         if ~ishghandle(fig); return; end
         s  = X_play(k, 1);
@@ -203,6 +212,12 @@ function animate_cartpole(t, X, p)
         set(bob, 'XData', bx,      'YData', by);
 
         set(ttl, 'String', sprintf('t = %5.2f s', t_play(k)));
-        drawnow;
+
+        dt_sleep = (t_play(k) - t_play(1)) - toc(t_wall);
+        if dt_sleep > 0
+            pause(dt_sleep);
+        else
+            drawnow limitrate;
+        end
     end
 end
