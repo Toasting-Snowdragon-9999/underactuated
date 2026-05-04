@@ -1,26 +1,29 @@
 function u = control2(t, x, params)
 % CONTROL2  Energy-shaping swing-up controller for the cart with double
-% pendulum, with a hand-off to the local LQR stabilizer near upright.
+% pendulum, with cart regulation and a hand-off to the local LQR
+% stabilizer near upright.
 %
 %   u = control2(t, x, params)
 %
 %   Strategy:
-%     - Far from upright: apply an energy-pumping cart force that drives
-%       the total mechanical energy E toward its value at the upright
-%       equilibrium, E_des. This swings the pendulum chain up.
-%     - Near upright (small angles AND small velocities): hand off to the
-%       LQR controller from control1, which exponentially stabilizes the
-%       upright equilibrium.
-%
-%   Energy-pumping law (gain k, default 5):
-%       u = k * (E - E_des) * sign( th1d cos(th1) + th2d cos(th2) )
-%
-%   Sign of  d/dt (m1 y1 + m2 y2)  is approximated by the sign argument
-%   above; pumping in this direction raises the bobs when energy is low
-%   and lowers them when energy is high.
+%     - Far from upright: pump total mechanical energy E toward its
+%       upright value E_des, using
+%           u_E   = k_E * (E - E_des) * sign( th1d cos(th1) + th2d cos(th2) )
+%       Add cart regulation
+%           u_reg = -k_s * s - k_v * sdot
+%       so the cart cannot drift off while pumping. (Without this the
+%       chaotic double-pendulum swing-up easily walks the cart out of
+%       any useful range and stalls.)
+%     - Near upright (small wrapped angles AND modest velocities): hand
+%       off to the LQR controller from control1, which exponentially
+%       stabilizes the upright equilibrium. Angles are unwrapped to
+%       [-pi, pi] before being passed to the LQR -- otherwise a chain
+%       that has rotated through 2*pi during pumping would feed a huge
+%       (and wrong-direction) error into the linear feedback.
 %
 %   State : x = [s; theta1; theta2; sdot; theta1dot; theta2dot]
 
+    s    = x(1);
     th1  = x(2);   th2  = x(3);
     sd   = x(4);   th1d = x(5);   th2d = x(6);
 
@@ -30,15 +33,19 @@ function u = control2(t, x, params)
     %% --- Switch to LQR when near upright -------------------------------
     th1_w = wrap_pi(th1);
     th2_w = wrap_pi(th2);
-    near_upright = abs(th1_w) < 0.2 && abs(th2_w) < 0.2 ...
-                && abs(th1d)  < 1.0 && abs(th2d)  < 1.0;
+    near_upright = abs(th1_w) < 0.35 && abs(th2_w) < 0.35 ...
+                && abs(th1d)  < 2.0  && abs(th2d)  < 2.0;
     if near_upright
-        u = control1(t, x, params);
+        % IMPORTANT: pass wrapped angles so LQR sees a small error even
+        % if the chain has rotated through full revolutions during pumping.
+        x_lqr = x;
+        x_lqr(2) = th1_w;
+        x_lqr(3) = th2_w;
+        u = control1(t, x_lqr, params);
         return;
     end
 
     %% --- Total mechanical energy ---------------------------------------
-    % bob velocities (same expressions used in simulation.m total_energy)
     x1d =  sd + l1*cos(th1)*th1d;
     y1d =     - l1*sin(th1)*th1d;
     x2d =  sd + l1*cos(th1)*th1d + l2*cos(th2)*th2d;
@@ -53,17 +60,23 @@ function u = control2(t, x, params)
     % Upright (kinetic = 0, cos = 1)
     E_des = (m1 + m2)*g*l1 + m2*g*l2;
 
-    %% --- Energy-pumping law --------------------------------------------
-    k = 5;
+    %% --- Energy-pumping law + cart regulation --------------------------
+    k_E = 12;     % energy-pumping gain      (was 5)
+    k_s = 2;     % cart-position regulator
+    k_v = 2;     % cart-velocity damping
+
     direction = sign(th1d*cos(th1) + th2d*cos(th2));
     if direction == 0
-        direction = 1;     % avoid being stuck at sign = 0
+        direction = 1;     % avoid being stuck at sign = 0 at t = 0
     end
 
-    u = k * (E - E_des) * direction;
+    u_energy = k_E * (E - E_des) * direction;
+    u_reg    = -k_s * s - k_v * sd;
 
-    % Soft saturation keeps the swing-up well-behaved for ode45.
-    u_max = 100;
+    u = u_energy + u_reg;
+
+    % Soft saturation keeps swing-up well-behaved for ode45.
+    u_max = 200;
     if u >  u_max, u =  u_max; end
     if u < -u_max, u = -u_max; end
 end
