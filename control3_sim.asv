@@ -13,9 +13,9 @@ clear; close all; clc;
 %  ------------------------------------------------------------------------
 params.M  = 1.0;     % cart mass               [kg]
 params.m1 = 0.5;    % pole-1 bob mass         [kg]
-params.m2 = 0.05;    % pole-2 bob mass         [kg]
-params.l1 = 1.0;    % pole-1 rod length       [m]
-params.l2 = 1.0;    % pole-2 rod length       [m]
+params.m2 = 0.W05;    % pole-2 bob mass         [kg]
+params.l1 = 0.1;    % pole-1 rod length       [m]
+params.l2 = 0.1;    % pole-2 rod length       [m]
 params.g  = 9.81;    % gravity                 [m/s^2]
 
 params.b_cart  = 0.05;     % linear-bearing cart friction  [N s / m]
