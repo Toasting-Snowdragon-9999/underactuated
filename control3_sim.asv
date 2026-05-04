@@ -1,0 +1,59 @@
+% CONTROL3_SIM  Closed-loop simulation of the cart with double pendulum
+% under the sliding-mode controller in control3.m.
+%
+% Scenario: start with both poles slightly off vertical and at rest;
+% the SMC drives the cart to s = 0 via a collocated sliding surface.
+% The pendulums are not directly controlled and may oscillate, but
+% should remain bounded.
+
+clear; close all; clc;
+
+%% ------------------------------------------------------------------------
+%  Parameters  (lab-grade cart-pendulum: realistic light viscous friction)
+%  ------------------------------------------------------------------------
+params.M  = 1.0;     % cart mass               [kg]
+params.m1 = 0.5;    % pole-1 bob mass         [kg]
+params.m2 = 0.W05;    % pole-2 bob mass         [kg]
+params.l1 = 0.1;    % pole-1 rod length       [m]
+params.l2 = 0.1;    % pole-2 rod length       [m]
+params.g  = 9.81;    % gravity                 [m/s^2]
+
+params.b_cart  = 0.05;     % linear-bearing cart friction  [N s / m]
+params.b_pend1 = 0.001;    % pole-1 joint friction         [N m s / rad]
+params.b_pend2 = 0.001;    % pole-2 joint friction         [N m s / rad]
+
+opts = odeset('RelTol', 1e-8, 'AbsTol', 1e-10);
+
+%% ------------------------------------------------------------------------
+%  Run -- SMC stabilization with small initial perturbation
+%  ------------------------------------------------------------------------
+fprintf('--- SMC (control3) ---\n');
+x0    = [0; 0.2; -0.2; 0; 0; 0];
+tspan = [0 20];
+
+u_fn = @(t, x) control3(t, x, params);
+
+[t, X] = ode45(@(t, x) underactuated_model(t, x, u_fn, params), ...
+               tspan, x0, opts);
+
+U = arrayfun(@(k) control3(t(k), X(k,:).', params), 1:numel(t));
+
+fprintf('  final s        = %+.3e m\n', X(end,1));
+fprintf('  final |theta1| = %.3e rad,  |theta2| = %.3e rad\n', ...
+        abs(X(end,2)), abs(X(end,3)));
+fprintf('  peak  |u|      = %.2f N\n\n', max(abs(U)));
+
+%% ------------------------------------------------------------------------
+%  Plots and animation
+%  ------------------------------------------------------------------------
+figure('Name', 'control3 -- SMC');
+subplot(4,1,1); plot(t, X(:,1), 'LineWidth', 1.1); grid on;
+    ylabel('s [m]'); title('control3 -- SMC');
+subplot(4,1,2); plot(t, X(:,2:3), 'LineWidth', 1.1); grid on;
+    ylabel('\theta [rad]'); legend('\theta_1', '\theta_2');
+subplot(4,1,3); plot(t, X(:,4:6), 'LineWidth', 1.1); grid on;
+    ylabel('velocity'); legend('sdot', '\theta_1 dot', '\theta_2 dot');
+subplot(4,1,4); plot(t, U, 'LineWidth', 1.1); grid on;
+    xlabel('t [s]'); ylabel('u [N]');
+
+animate_cartpole(t, X, params);
