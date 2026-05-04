@@ -62,8 +62,14 @@ function u = control2(t, x, params)
 
     %% --- Energy-pumping law + cart regulation --------------------------
     k_E = 12;     % energy-pumping gain      (was 5)
-    k_s = 2;     % cart-position regulator
-    k_v = 2;     % cart-velocity damping
+    k_s = 2;      % cart-position regulator
+    k_v = 2;      % cart-velocity damping
+
+    % Configuration / damping shaping gains (bias toward upright,
+    % suppress residual pendulum oscillations).
+    k_theta = 5;
+    alpha   = 0.5;
+    k_d     = 2;
 
     direction = sign(th1d*cos(th1) + th2d*cos(th2));
     if direction == 0
@@ -72,8 +78,10 @@ function u = control2(t, x, params)
 
     u_energy = k_E * (E - E_des) * direction;
     u_reg    = -k_s * s - k_v * sd;
+    u_shape  = -k_theta * (sin(th1) + alpha * sin(th2));
+    u_damp   = -k_d * (th1d + th2d);
 
-    u = u_energy + u_reg;
+    u = u_energy + u_reg + u_shape + u_damp;
 
     % Soft saturation keeps swing-up well-behaved for ode45.
     u_max = 200;
