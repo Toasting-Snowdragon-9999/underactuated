@@ -13,12 +13,16 @@ clear; close all; clc;
 
 %% ------------------------------------------------------------------------
 %  Parameters  (lab-grade cart-pendulum: realistic light viscous friction)
+%  Shared with controller1_sim and control3_sim so all three controllers
+%  are compared on the same plant. Energy budget: from hanging at rest to
+%  upright at rest is about 2*E_des = 4.6 J, well within what a 100 N
+%  cart force can pump in under ~20 s.
 %  ------------------------------------------------------------------------
 params.M  = 1.0;     % cart mass               [kg]
-params.m1 = 0.5;    % pole-1 bob mass         [kg]
-params.m2 = 0.05;    % pole-2 bob mass         [kg]
-params.l1 = 1.0;    % pole-1 rod length       [m]
-params.l2 = 1.0;    % pole-2 rod length       [m]
+params.m1 = 0.20;    % pole-1 bob mass         [kg]
+params.m2 = 0.15;    % pole-2 bob mass         [kg]
+params.l1 = 0.50;    % pole-1 rod length       [m]
+params.l2 = 0.40;    % pole-2 rod length       [m]
 params.g  = 9.81;    % gravity                 [m/s^2]
 
 params.b_cart  = 0.05;     % linear-bearing cart friction  [N s / m]
@@ -32,7 +36,7 @@ opts = odeset('RelTol', 1e-8, 'AbsTol', 1e-10);
 %  ------------------------------------------------------------------------
 fprintf('--- Swing-up + LQR (control2) ---\n');
 x0    = [0; pi - 0.1; pi + 0.1; 0; 0; 0];   % near hanging, slight kick
-tspan = [0 30];
+tspan = [0 20];
 
 u_fn = @(t, x) control2(t, x, params);
 
@@ -46,9 +50,20 @@ E     = arrayfun(@(k) total_energy(X(k,:).', params), 1:numel(t));
 E_des = (params.m1 + params.m2)*params.g*params.l1 ...
        + params.m2*params.g*params.l2;
 
+% Energy-injection sanity check. dE/dt = u * sdot for the closed system,
+% so during the pumping phase (E < E_des) the time-averaged u*sdot should
+% be positive: the controller is injecting, not bleeding, energy.
+sdot   = X(:,4);
+dE_dt  = U(:) .* sdot;
+pump_mask  = E(:) < E_des - 0.1;             % "far from equilibrium"
+inject_avg = mean(dE_dt(pump_mask));
+
 fprintf('  final |theta1| = %.3e rad,  |theta2| = %.3e rad\n', ...
         abs(wrap_pi(X(end,2))), abs(wrap_pi(X(end,3))));
-fprintf('  E_des = %.3f J,  final E = %.3f J\n', E_des, E(end));
+fprintf('  E_des = %.3f J,  E(0) = %.3f J,  max E = %.3f J,  final E = %.3f J\n', ...
+        E_des, E(1), max(E), E(end));
+fprintf('  mean dE/dt while E < E_des: %+ .3f W  (positive = energy being injected)\n', ...
+        inject_avg);
 fprintf('  peak  |u|      = %.2f N\n\n', max(abs(U)));
 
 %% ------------------------------------------------------------------------
