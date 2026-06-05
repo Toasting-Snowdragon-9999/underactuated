@@ -344,15 +344,15 @@ followed by saturation. In the code, $k_E=12$, $k_s=k_v=2$, $k_\theta=5$, $\alph
     |\dot{\theta}_2|<2.
 \end{equation}
 
-The third controller, \texttt{control3.m}, is a sliding-mode controller on the collocated cart coordinate. It defines
+The third controller, \texttt{control3.m}, is a sliding-mode controller that also targets the upright equilibrium of the full state (cart centered, both pendulums upright). Because the plant is underactuated, a sliding surface defined on the cart coordinate alone would leave the pendulum angles unconstrained on the sliding manifold. The surface therefore mixes all six states through the LQR gain $K$ of the linearized upright dynamics,
 \begin{equation}
-    \sigma=(\dot{s}-\dot{s}_{\mathrm{des}})+\lambda(s-s_{\mathrm{des}})
+    \sigma = K\,\bm x_{\mathrm{wrap}},
 \end{equation}
-and applies
+where $\bm x_{\mathrm{wrap}}$ wraps $\theta_1,\theta_2$ into $(-\pi,\pi]$. The control law has the standard equivalent-plus-switching form
 \begin{equation}
-    u_{\mathrm{SMC}}=-(K_p s+K_d\dot{s})-k\sat\left(\frac{\sigma}{\phi}\right).
+    u_{\mathrm{SMC}}=-K\,\bm x_{\mathrm{wrap}}-k_{\mathrm{sw}}\sat\!\left(\frac{\sigma}{\phi}\right),
 \end{equation}
-Because this sliding surface is collocated, it regulates the cart directly and influences the pendulum angles only indirectly.
+with a boundary-layer saturation that keeps chattering bounded. On the manifold $\sigma=0$ the reduced dynamics inherit the LQR closed-loop stability, so the tip of the second pendulum converges to the upright reference.
 
 \sectionpage
 \section{Simulation Results and Conclusion}
@@ -378,7 +378,7 @@ which lies close to the upright equilibrium. The energy-shaping simulation start
         0&\pi-0.1&\pi+0.1&0&0&0
     \end{bmatrix}^{T},
 \end{equation}
-and runs long enough for swing-up and LQR capture. The sliding-mode simulation starts at $[0,0.2,-0.2,0,0,0]^T$ and demonstrates cart regulation through a collocated sliding surface.
+and runs long enough for swing-up and LQR capture. The sliding-mode simulation starts at $[0,0.2,-0.2,0,0,0]^T$, a small perturbation from the upright equilibrium, and the SMC drives both pendulum angles and the cart back to zero.
 
 \begin{center}
 \small
@@ -389,12 +389,12 @@ and runs long enough for swing-up and LQR capture. The sliding-mode simulation s
 \texttt{simulation.m} & Verifies energy conservation, equilibria, linearization, and controllability. & Energy drift, eigenvalues, controllability rank, and animation.\\
 \texttt{controller1\_sim.m} & Tests local LQR balance near upright. & Decay of $\theta_1,\theta_2$, bounded force, small final errors.\\
 \texttt{controller2\_sim.m} & Tests swing-up, cart regulation, and LQR hand-off. & Energy approaches $E_{\mathrm{des}}$, then angles settle near zero.\\
-\texttt{control3\_sim.m} & Tests sliding-mode cart regulation. & Cart converges toward $s=0$ while pendulum motion remains indirectly affected.\\
+\texttt{control3\_sim.m} & Tests sliding-mode stabilization of the upright equilibrium. & Cart, $\theta_1$, and $\theta_2$ all converge toward zero (tip upright).\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The project demonstrates a complete workflow for an underactuated robotics problem. The Euler--Lagrange derivation gives a physically meaningful nonlinear model, and the verification script checks whether the implementation behaves consistently. The LQR controller is appropriate for local stabilization because it is based on the linearized upright dynamics. The energy-shaping controller addresses the larger swing-up task by injecting or removing mechanical energy and then switching to LQR near upright. The sliding-mode controller provides an additional nonlinear comparison, but because it is collocated on the cart coordinate, it should not be expected to stabilize both pendulum angles as directly as the LQR capture phase.
+The project demonstrates a complete workflow for an underactuated robotics problem. The Euler--Lagrange derivation gives a physically meaningful nonlinear model, and the verification script checks whether the implementation behaves consistently. The LQR controller is appropriate for local stabilization because it is based on the linearized upright dynamics. The energy-shaping controller addresses the larger swing-up task by injecting or removing mechanical energy and then switching to LQR near upright. The sliding-mode controller provides a nonlinear comparison on the same upright-stabilization task as the LQR: it adds a boundary-layer switching term on top of an LQR-shaped sliding surface, trading some chattering for improved disturbance rejection.
 
 The main limitation is that the swing-up and sliding-mode designs are heuristic. A stronger final study would include exported MATLAB figures, quantitative settling-time and peak-force comparisons, robustness tests under parameter uncertainty, and a more formal hybrid stability argument. Nevertheless, the current project captures the central challenge of underactuated control: passive coordinates must be controlled through dynamic coupling rather than direct actuation.
 

@@ -2,20 +2,22 @@
 % under the sliding-mode controller in control3.m.
 %
 % Scenario: start with both poles slightly off vertical and at rest;
-% the SMC drives the cart to s = 0 via a collocated sliding surface.
-% The pendulums are not directly controlled and may oscillate, but
-% should remain bounded.
+% the SMC drives the entire state (cart + both pendulums) to the upright
+% equilibrium via a sliding surface that mixes cart and pendulum errors.
+% Goal: tip of the second pendulum upright and the cart centered.
 
 clear; close all; clc;
 
 %% ------------------------------------------------------------------------
 %  Parameters  (lab-grade cart-pendulum: realistic light viscous friction)
+%  Same physical setup as controller1_sim -- both are local upright
+%  stabilizers, so the comparison is on controller design, not the plant.
 %  ------------------------------------------------------------------------
 params.M  = 1.0;     % cart mass               [kg]
-params.m1 = 0.5;    % pole-1 bob mass         [kg]
-params.m2 = 0.05;    % pole-2 bob mass         [kg]
-params.l1 = 1.0;    % pole-1 rod length       [m]
-params.l2 = 1.0;    % pole-2 rod length       [m]
+params.m1 = 0.20;    % pole-1 bob mass         [kg]
+params.m2 = 0.15;    % pole-2 bob mass         [kg]
+params.l1 = 0.50;    % pole-1 rod length       [m]
+params.l2 = 0.40;    % pole-2 rod length       [m]
 params.g  = 9.81;    % gravity                 [m/s^2]
 
 params.b_cart  = 0.05;     % linear-bearing cart friction  [N s / m]
@@ -38,9 +40,15 @@ u_fn = @(t, x) control3(t, x, params);
 
 U = arrayfun(@(k) control3(t(k), X(k,:).', params), 1:numel(t));
 
+% Tip position relative to upright reference (0, l1+l2).
+tip_x = X(:,1) + params.l1*sin(X(:,2)) + params.l2*sin(X(:,3));
+tip_y =          params.l1*cos(X(:,2)) + params.l2*cos(X(:,3));
+tip_err_final = hypot(tip_x(end), tip_y(end) - (params.l1 + params.l2));
+
 fprintf('  final s        = %+.3e m\n', X(end,1));
 fprintf('  final |theta1| = %.3e rad,  |theta2| = %.3e rad\n', ...
         abs(X(end,2)), abs(X(end,3)));
+fprintf('  final tip err  = %.3e m  (distance from upright tip)\n', tip_err_final);
 fprintf('  peak  |u|      = %.2f N\n\n', max(abs(U)));
 
 %% ------------------------------------------------------------------------
